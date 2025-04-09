@@ -1,0 +1,103 @@
+import React from "react";
+import { ForecastData, ForecastItem } from "../types/weather";
+import { Card, CardContent } from "./ui/card";
+import { format } from "date-fns";
+import { Skeleton } from "./ui/skeleton";
+
+interface ForecastSectionProps {
+  data: ForecastData | null;
+  isLoading: boolean;
+}
+
+const ForecastSection: React.FC<ForecastSectionProps> = ({ data, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-lg mt-6">
+        <h2 className="text-xl font-semibold mb-3">5-Day Forecast</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardContent className="p-3">
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-8 w-8 rounded-full mx-auto my-2" />
+                <Skeleton className="h-5 w-12 mx-auto mb-1" />
+                <div className="flex justify-between mt-2">
+                  <Skeleton className="h-4 w-10" />
+                  <Skeleton className="h-4 w-10" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+  
+  // Group forecast items by day and get one item per day (at noon)
+  const dailyForecasts = getDailyForecasts(data.list);
+
+  return (
+    <div className="w-full max-w-lg mt-6">
+      <h2 className="text-xl font-semibold mb-3">5-Day Forecast</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+        {dailyForecasts.map((item) => (
+          <ForecastCard key={item.dt} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ForecastCard: React.FC<{ item: ForecastItem }> = ({ item }) => {
+  const date = new Date(item.dt * 1000);
+  const dayName = format(date, "EEE");
+  const temp = Math.round(item.main.temp);
+  const { icon, description } = item.weather[0];
+
+  return (
+    <Card className="overflow-hidden hover:shadow-md transition-shadow duration-300">
+      <CardContent className="p-3">
+        <p className="text-center font-medium">{dayName}</p>
+        <div className="flex justify-center my-1">
+          <img
+            src={`https://openweathermap.org/img/wn/${icon}.png`}
+            alt={description}
+            className="w-10 h-10"
+          />
+        </div>
+        <p className="text-center font-semibold text-lg">{temp}°C</p>
+        <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <span>{Math.round(item.wind.speed)} km/h</span>
+          <span>{item.main.humidity}%</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Helper function to get one forecast per day at around noon
+const getDailyForecasts = (forecastList: ForecastItem[]): ForecastItem[] => {
+  const dailyData: ForecastItem[] = [];
+  const processedDays = new Set();
+  
+  for (const item of forecastList) {
+    const date = new Date(item.dt * 1000);
+    const day = format(date, "yyyy-MM-dd");
+    const hour = date.getHours();
+    
+    // Take forecasts close to noon (between 11-14) for each day
+    if (!processedDays.has(day) && hour >= 11 && hour <= 14) {
+      dailyData.push(item);
+      processedDays.add(day);
+      
+      // Once we have 5 days, stop
+      if (dailyData.length >= 5) break;
+    }
+  }
+  
+  return dailyData;
+};
+
+export default ForecastSection;
