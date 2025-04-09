@@ -1,0 +1,57 @@
+
+import { WeatherData, ForecastData } from "../types/weather";
+
+const API_KEY = ""; // User will need to add their OpenWeatherMap API key here
+const BASE_URL = "https://api.openweathermap.org/data/2.5";
+
+export const fetchWeatherByCity = async (city: string): Promise<WeatherData> => {
+  if (!API_KEY) {
+    throw new Error("API key is missing. Please add your OpenWeatherMap API key.");
+  }
+
+  try {
+    const response = await fetch(
+      `${BASE_URL}/weather?q=${city}&appid=${API_KEY}&units=metric`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("City not found. Please check the spelling and try again.");
+      }
+      throw new Error("Failed to fetch weather data. Please try again later.");
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("An unexpected error occurred. Please try again.");
+  }
+};
+
+export const fetchForecastByCity = async (city: string): Promise<ForecastData> => {
+  if (!API_KEY) {
+    throw new Error("API key is missing. Please add your OpenWeatherMap API key.");
+  }
+
+  try {
+    const response = await fetch(
+      `${BASE_URL}/forecast?q=${city}&appid=${API_KEY}&units=metric`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("City not found. Please check the spelling and try again.");
+      }
+      throw new Error("Failed to fetch forecast data. Please try again later.");
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("An unexpected error occurred. Please try again.");
+  }
+};
